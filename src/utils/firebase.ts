@@ -2,13 +2,14 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MSG_ID",
-  appId: "YOUR_APP_ID",
+  apiKey: "AIzaSyBrS5i5QRQzMcdq2HOSz0AH_lSaL9HD1F8",
+  authDomain: "fastride-admin.firebaseapp.com",
+  projectId: "fastride-admin",
+  storageBucket: "fastride-admin.firebasestorage.app",
+  messagingSenderId: "86971989113",
+  appId: "1:86971989113:web:d391380887de9a474da8a8"
 };
+
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
