@@ -4,10 +4,11 @@ import generateInvoice from "../utils/generateInvoice";
 export default function Invoices() {
   const [form, setForm] = useState({
     customer: "",
-    from: "",
-    to: "",
+    pickup: "",
+    drop: "",
+    tripType: "One Way",
     distance: "",
-    amount: "",
+    rate: "",
   });
 
   const handleChange = (e: any) => {
@@ -15,68 +16,38 @@ export default function Invoices() {
   };
 
   const handleGenerate = () => {
-    if (!form.customer || !form.amount) {
-      alert("Please fill all required fields");
+    if (!form.customer || !form.pickup || !form.drop || !form.distance || !form.rate) {
+      alert("Please fill all fields!");
       return;
     }
-
-    const today = new Date().toLocaleDateString();
-
     generateInvoice({
-      customer: form.customer,
-      amount: form.amount,
-      date: today,
+      ...form,
+      distance: parseFloat(form.distance),
+      rate: parseFloat(form.rate),
+      date: new Date().toLocaleDateString(),
     });
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
-      <div className="bg-white p-6 rounded-xl shadow-md w-96">
-        <h2 className="text-xl font-bold mb-4 text-center">Create Invoice</h2>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Generate Invoice</h1>
 
-        <input
-          name="customer"
-          placeholder="Customer Name"
-          value={form.customer}
-          onChange={handleChange}
-          className="border p-2 w-full mb-2"
-        />
-        <input
-          name="from"
-          placeholder="From"
-          value={form.from}
-          onChange={handleChange}
-          className="border p-2 w-full mb-2"
-        />
-        <input
-          name="to"
-          placeholder="To"
-          value={form.to}
-          onChange={handleChange}
-          className="border p-2 w-full mb-2"
-        />
-        <input
-          name="distance"
-          placeholder="Distance (km)"
-          value={form.distance}
-          onChange={handleChange}
-          className="border p-2 w-full mb-2"
-        />
-        <input
-          name="amount"
-          placeholder="Amount (₹)"
-          value={form.amount}
-          onChange={handleChange}
-          className="border p-2 w-full mb-4"
-        />
-
-        <button
-          onClick={handleGenerate}
-          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
-        >
-          Generate Invoice
-        </button>
+      <div className="grid grid-cols-2 gap-4 max-w-xl">
+        <input name="customer" placeholder="Customer Name" className="border p-2 rounded" onChange={handleChange} />
+        <input name="pickup" placeholder="Pickup Location" className="border p-2 rounded" onChange={handleChange} />
+        <input name="drop" placeholder="Drop Location" className="border p-2 rounded" onChange={handleChange} />
+        <select name="tripType" className="border p-2 rounded" onChange={handleChange}>
+          <option>One Way</option>
+          <option>Round Trip</option>
+        </select>
+        <input name="distance" type="number" placeholder="Distance (km)" className="border p-2 rounded" onChange={handleChange} />
+        <input name="rate" type="number" placeholder="Rate per km" className="border p-2 rounded" onChange={handleChange} />
       </div>
+
+      <button onClick={handleGenerate} className="mt-6 bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-2 rounded font-semibold">
+        Download Invoice
+      </button>
     </div>
   );
 }
+
