@@ -23,8 +23,6 @@ export default function generateInvoice({
   date,
   invoiceNo,
 }: InvoiceData) {
-  console.log("Invoice data:", { customer, tripType, pickup, drop, distance, rate });
-
   const doc = new jsPDF("p", "mm", "a4");
 
   // ✅ Minimum distance logic
@@ -36,7 +34,7 @@ export default function generateInvoice({
   const driverBata = 400;
   const total = subtotal + driverBata;
 
-  // ✅ Header with logo
+  // ✅ Header
   doc.addImage(logo, "PNG", 150, 10, 40, 30);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
@@ -59,15 +57,15 @@ export default function generateInvoice({
   doc.text(`Date: ${date}`, 10, 78);
   doc.text(`Invoice No: ${invoiceNo}`, 10, 86);
 
-  // ✅ Table
+  // ✅ Table (no ₹ symbol to avoid font issue)
   const body = [
     ["Trip Type", tripType],
     ["Pickup Location", pickup],
     ["Drop Location", drop],
     ["Distance (km)", `${finalDistance.toFixed(0)} km`],
-    ["Rate per km", `₹${rate.toFixed(2)}`],
-    ["Driver Bata", `₹${driverBata.toFixed(2)}`],
-    ["Total Fare", `₹${total.toFixed(2)}`],
+    ["Rate per km", `Rs ${rate.toFixed(2)}`],
+    ["Driver Bata", `Rs ${driverBata.toFixed(2)}`],
+    ["Total Fare", `Rs ${total.toFixed(2)}`],
   ];
 
   autoTable(doc, {
@@ -83,7 +81,7 @@ export default function generateInvoice({
     },
   });
 
-  // ✅ Minimum distance note
+  // ✅ Note for minimum distance
   const minText =
     finalDistance === minDistance
       ? `(Minimum distance fare applied — ${minDistance} km)`
