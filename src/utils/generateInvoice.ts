@@ -11,7 +11,6 @@ interface InvoiceData {
   rate: number;
   date: string;
   invoiceNo: string;
-  preview?: boolean;
 }
 
 export default function generateInvoice({
@@ -23,31 +22,29 @@ export default function generateInvoice({
   rate,
   date,
   invoiceNo,
-  preview = false,
 }: InvoiceData) {
   const doc = new jsPDF("p", "mm", "a4");
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 10;
-  const contentWidth = pageWidth - margin * 2;
 
-  // ✅ Minimum distance logic
+  // ✅ Apply minimum km rule
   const minDistance = tripType === "One Way" ? 130 : 250;
   const finalDistance = Math.max(distance, minDistance);
 
-  // ✅ Calculations
+  // ✅ Calculation
   const driverBata = 400;
   const subtotal = finalDistance * rate;
   const total = subtotal + driverBata;
 
-  // ✅ Header section
+  // ✅ Header
   doc.addImage(logo, "PNG", pageWidth - 55, 10, 45, 25);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
   doc.text("FASTRIDE DROP TAXI", margin, 20);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text("3/8, VOC Nagar, Devamangalam, Ariyalur - 612902", margin, 28);
+  doc.text("3/8, Voc Nagar, Devamangalam, Ariyalur - 612902", margin, 28);
   doc.text("Phone: 6382980204 | Email: fastridedroptaxi.booking@gmail.com", margin, 34);
   doc.line(margin, 38, pageWidth - margin, 38);
 
@@ -63,12 +60,12 @@ export default function generateInvoice({
   doc.text(`Date: ${date}`, margin, 72);
   doc.text(`Invoice No: ${invoiceNo}`, margin, 79);
 
-  // ✅ Table data
+  // ✅ Table content
   const body = [
     ["Trip Type", tripType],
     ["Pickup Location", pickup],
     ["Drop Location", drop],
-    ["Distance (km)", `${finalDistance.toFixed(0)} km`],
+    ["Distance (km)", `${finalDistance} km`],
     ["Rate per km", `₹ ${rate.toFixed(2)}`],
     ["Driver Bata", `₹ ${driverBata.toFixed(2)}`],
     ["Total Fare", `₹ ${total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`],
@@ -79,27 +76,29 @@ export default function generateInvoice({
     head: [["Description", "Details"]],
     body,
     theme: "grid",
-    styles: { fontSize: 11, cellPadding: 5, lineColor: [200, 200, 200] },
-    headStyles: { fillColor: [255, 204, 0], textColor: 0 },
+    styles: {
+      fontSize: 11,
+      cellPadding: 5,
+      overflow: "linebreak",
+    },
+    headStyles: {
+      fillColor: [255, 204, 0],
+      textColor: 0,
+      halign: "center",
+    },
     columnStyles: {
-      0: { cellWidth: contentWidth * 0.55 },
-      1: { cellWidth: contentWidth * 0.4, halign: "right" },
+      0: { cellWidth: 90 },
+      1: { cellWidth: 90, halign: "right" },
     },
   });
 
   // ✅ Footer
   const finalY = (doc as any).lastAutoTable.finalY + 15;
-  doc.setFontSize(10);
   doc.setFont("helvetica", "italic");
+  doc.setFontSize(10);
   doc.text("Thank you for choosing Fastride Drop Taxi!", margin, finalY);
-  doc.text("For queries: fastridedroptaxi.booking@gmail.com", margin, finalY + 8);
+  doc.text("For queries, contact fastridedroptaxi.booking@gmail.com", margin, finalY + 7);
 
-  // ✅ Save or preview
-  if (preview) {
-    const blob = doc.output("blob");
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
-  } else {
-    doc.save(`invoice_${invoiceNo}.pdf`);
-  }
+  // ✅ Save as file
+  doc.save(`invoice_${invoiceNo}.pdf`);
 }
