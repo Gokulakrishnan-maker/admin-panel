@@ -25,80 +25,82 @@ export default function generateInvoice({
 }: InvoiceData) {
   const doc = new jsPDF("p", "mm", "a4");
 
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 10;
-
-  // ✅ Apply minimum km rule
+  // ✅ Minimum distance logic
   const minDistance = tripType === "One Way" ? 130 : 250;
-  const finalDistance = Math.max(distance, minDistance);
+  const finalDistance = distance < minDistance ? minDistance : distance;
 
-  // ✅ Calculation
-  const driverBata = 400;
+  // ✅ Charges
   const subtotal = finalDistance * rate;
+  const driverBata = 400;
   const total = subtotal + driverBata;
 
   // ✅ Header
-  doc.addImage(logo, "PNG", pageWidth - 55, 10, 45, 25);
+  doc.addImage(logo, "PNG", 150, 10, 40, 30);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.text("FASTRIDE DROP TAXI", margin, 20);
+  doc.setFontSize(16);
+  doc.text("FASTRIDE DROP TAXI", 10, 20);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.text("3/8, Voc Nagar, Devamangalam, Ariyalur - 612902", margin, 28);
-  doc.text("Phone: 6382980204 | Email: fastridedroptaxi.booking@gmail.com", margin, 34);
-  doc.line(margin, 38, pageWidth - margin, 38);
+  doc.setFontSize(11);
+  doc.text("3/8, VOC Nagar, Devamangalam, Ariyalur - 612902", 10, 30);
+  doc.text("Phone: 6382980204 | Email: fastridedroptaxi.booking@gmail.com", 10, 38);
+  doc.line(10, 42, 200, 42);
 
   // ✅ Title
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text("TAXI SERVICE INVOICE", pageWidth / 2, 50, { align: "center" });
+  doc.setFontSize(14);
+  doc.text("TAXI SERVICE INVOICE", 70, 55);
 
   // ✅ Customer Info
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.text(`Customer Name: ${customer}`, margin, 65);
-  doc.text(`Date: ${date}`, margin, 72);
-  doc.text(`Invoice No: ${invoiceNo}`, margin, 79);
+  doc.setFontSize(12);
+  doc.text(`Customer Name: ${customer}`, 10, 70);
+  doc.text(`Date: ${date}`, 10, 78);
+  doc.text(`Invoice No: ${invoiceNo}`, 10, 86);
 
-  // ✅ Table content
+  // ✅ Table (no ₹ symbol to avoid font issue)
   const body = [
     ["Trip Type", tripType],
     ["Pickup Location", pickup],
     ["Drop Location", drop],
-    ["Distance (km)", `${finalDistance} km`],
-    ["Rate per km", `₹ ${rate.toFixed(2)}`],
-    ["Driver Bata", `₹ ${driverBata.toFixed(2)}`],
-    ["Total Fare", `₹ ${total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`],
+    ["Distance (km)", `${finalDistance.toFixed(0)} km`],
+    ["Rate per km", `Rs ${rate.toFixed(2)}`],
+    ["Driver Bata", `Rs ${driverBata.toFixed(2)}`],
+    ["Total Fare", `Rs ${total.toFixed(2)}`],
   ];
 
   autoTable(doc, {
-    startY: 90,
+    startY: 100,
     head: [["Description", "Details"]],
     body,
     theme: "grid",
-    styles: {
-      fontSize: 11,
-      cellPadding: 5,
-      overflow: "linebreak",
-    },
-    headStyles: {
-      fillColor: [255, 204, 0],
-      textColor: 0,
-      halign: "center",
-    },
+    headStyles: { fillColor: [255, 204, 0], textColor: 0, halign: "center" },
+    styles: { fontSize: 11, cellPadding: 5 },
     columnStyles: {
-      0: { cellWidth: 90 },
-      1: { cellWidth: 90, halign: "right" },
+      0: { cellWidth: 100, halign: "left" },
+      1: { cellWidth: 80, halign: "right" },
     },
   });
 
-  // ✅ Footer
-  const finalY = (doc as any).lastAutoTable.finalY + 15;
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(10);
-  doc.text("Thank you for choosing Fastride Drop Taxi!", margin, finalY);
-  doc.text("For queries, contact fastridedroptaxi.booking@gmail.com", margin, finalY + 7);
+  // ✅ Note for minimum distance
+  const minText =
+    finalDistance === minDistance
+      ? `(Minimum distance fare applied — ${minDistance} km)`
+      : "";
 
-  // ✅ Save as file
+  let finalY = (doc as any).lastAutoTable.finalY + 10;
+  if (minText) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(10);
+    doc.text(minText, 10, finalY);
+    finalY += 10;
+  }
+
+  // ✅ Footer
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.text("Thank you for choosing Fastride Drop Taxi!", 10, finalY + 10);
+  doc.text("For queries, contact fastridedroptaxi.booking@gmail.com", 10, finalY + 18);
+
+  // ✅ Save File
   doc.save(`invoice_${invoiceNo}.pdf`);
 }
