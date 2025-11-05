@@ -31,15 +31,21 @@ export default function generateInvoice({
   tollCharge = 0,
   extraCharge = 0,
 }: InvoiceData) {
-  // ✅ Fix: Ensure safe numeric values
-  const d = Number(distance) || 0;
-  const r = Number(rate) || 0;
-  const toll = Number(tollCharge) || 0;
-  const extra = Number(extraCharge) || 0;
+  // ✅ Ensure values are safe
+  const km = parseFloat(String(distance)) || 0;
+  const perKmRate = parseFloat(String(rate)) || 0;
+  const toll = parseFloat(String(tollCharge)) || 0;
+  const extra = parseFloat(String(extraCharge)) || 0;
+
+  const minKm = tripType === "One Way" ? 130 : 250;
+  const chargeableKm = Math.max(km, minKm);
+  const driverBata = 400;
+  const baseFare = chargeableKm * perKmRate;
+  const total = baseFare + driverBata + toll + extra;
 
   const doc = new jsPDF({ unit: "mm", format: "a4" });
 
-  // ✅ Use standard font
+  // ✅ Use standard font to avoid encoding issues
   doc.setFont("helvetica", "normal");
 
   // --- HEADER ---
@@ -80,13 +86,13 @@ export default function generateInvoice({
       ["Trip Type", tripType],
       ["Pickup Location", pickup],
       ["Drop Location", drop],
-      ["Distance (km)", `${d.toFixed(0)} km`],
-      ["Rate per km", `₹${r.toFixed(2)}`],
+      ["Distance (km)", `${km} km`],
+      ["Rate per km", `₹${perKmRate.toFixed(2)}`],
       ["Vehicle Type", vehicleType || "-"],
       ["Driver Name", driverName || "-"],
     ],
     theme: "grid",
-    headStyles: { fillColor: [240, 240, 240] },
+    headStyles: { fillColor: [245, 245, 245], textColor: 0 },
     styles: { fontSize: 10, cellPadding: 4 },
     columnStyles: {
       0: { cellWidth: 90 },
@@ -94,21 +100,13 @@ export default function generateInvoice({
     },
   });
 
-  // --- CALCULATIONS ---
-  const minKm = tripType === "One Way" ? 130 : 250;
-  const chargeableKm = Math.max(d, minKm);
-  const driverBata = 400;
-  const baseFare = chargeableKm * r;
-  const total = baseFare + driverBata + toll + extra;
-
-  const startY = (doc as any).lastAutoTable.finalY + 10;
-
   // --- BILLING DETAILS ---
+  const startY = (doc as any).lastAutoTable.finalY + 10;
   autoTable(doc, {
     startY,
     head: [["Billing Details", "Amount (₹)"]],
     body: [
-      [`Base Fare (${chargeableKm} km x ₹${r.toFixed(2)})`, baseFare.toFixed(2)],
+      [`Base Fare (${chargeableKm} km x ₹${perKmRate.toFixed(2)})`, baseFare.toFixed(2)],
       ["Driver Allowance", driverBata.toFixed(2)],
       ["Toll Charges", toll.toFixed(2)],
       ["Extra Charges", extra.toFixed(2)],
@@ -127,11 +125,7 @@ export default function generateInvoice({
   // --- FOOTER ---
   const finalY = (doc as any).lastAutoTable.finalY + 15;
   doc.setFontSize(9);
-  doc.text(
-    "This is a computer-generated invoice and does not require a signature.",
-    10,
-    finalY
-  );
+  doc.text("This is a computer-generated invoice and does not require a signature.", 10, finalY);
   doc.text("Thank you for choosing Fastride Drop Taxi!", 10, finalY + 7);
   doc.text("For queries: fastridedroptaxi.booking@gmail.com", 10, finalY + 12);
 
