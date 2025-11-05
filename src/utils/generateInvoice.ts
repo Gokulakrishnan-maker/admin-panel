@@ -4,7 +4,11 @@ import logo from "../assets/Fastridedroptaxi.png";
 
 interface InvoiceData {
   invoiceNo: string;
-  customer: string;
+  customerName: string;
+  mobileNumber?: string;
+  email?: string;
+  address?: string;
+  customerGST?: string;
   pickup: string;
   drop: string;
   tripType: string;
@@ -13,13 +17,19 @@ interface InvoiceData {
   rate: number;
   vehicleType?: string;
   driverName?: string;
+  cabNumber?: string;
   tollCharge?: number;
   extraCharge?: number;
+  driverAllowance?: number;
 }
 
 export default function generateInvoice({
   invoiceNo,
-  customer,
+  customerName,
+  mobileNumber,
+  email,
+  address,
+  customerGST,
   pickup,
   drop,
   tripType,
@@ -28,8 +38,10 @@ export default function generateInvoice({
   rate,
   vehicleType,
   driverName,
+  cabNumber,
   tollCharge = 0,
   extraCharge = 0,
+  driverAllowance = 400,
 }: InvoiceData) {
   const doc = new jsPDF();
 
@@ -58,12 +70,15 @@ export default function generateInvoice({
   doc.text("Ariyalur - 612902", 10, 66);
   doc.text("Phone: 6382980204", 10, 72);
 
-  doc.text(`${customer}`, 110, 54);
-  doc.text(`${pickup} ➝ ${drop}`, 110, 60);
+  doc.text(`${customerName}`, 110, 54);
+  if (mobileNumber) doc.text(`Phone: ${mobileNumber}`, 110, 60);
+  if (email) doc.text(`${email}`, 110, 66);
+  if (address) doc.text(`${address}`, 110, 72);
+  if (customerGST) doc.text(`GSTIN: ${customerGST}`, 110, 78);
 
   // ✅ Trip Details Table
   autoTable(doc, {
-    startY: 82,
+    startY: 90,
     head: [["Trip Details", "Information"]],
     body: [
       ["Trip Type", tripType],
@@ -71,8 +86,9 @@ export default function generateInvoice({
       ["Drop Location", drop],
       ["Distance (km)", `${distance.toFixed(0)} km`],
       ["Rate per km", `₹${rate.toFixed(2)}`],
-      ["Vehicle Type", vehicleType],
-      ["Driver Name", driverName],
+      ["Vehicle Type", vehicleType || "-"],
+      ["Driver Name", driverName || "-"],
+      ["Cab Number", cabNumber || "-"],
     ],
     theme: "grid",
     headStyles: { fillColor: [240, 240, 240], textColor: 0 },
@@ -87,16 +103,15 @@ export default function generateInvoice({
   const startY = (doc as any).lastAutoTable.finalY + 10;
   const minKm = tripType === "One Way" ? 130 : 250;
   const chargeableKm = Math.max(distance, minKm);
-  const driverBata = 400;
   const baseFare = chargeableKm * rate;
-  const total = baseFare + driverBata + tollCharge + extraCharge;
+  const total = baseFare + driverAllowance + tollCharge + extraCharge;
 
   autoTable(doc, {
     startY,
     head: [["Billing Details", "Amount (₹)"]],
     body: [
-      [`Base Fare (${chargeableKm} km x ₹${rate})`, baseFare.toFixed(2)],
-      ["Driver Allowance", driverBata.toFixed(2)],
+      [`Base Fare (${chargeableKm} km × ₹${rate})`, baseFare.toFixed(2)],
+      ["Driver Allowance", driverAllowance.toFixed(2)],
       ["Toll Charges", tollCharge.toFixed(2)],
       ["Extra Charges", extraCharge.toFixed(2)],
       ["", ""],
