@@ -44,8 +44,13 @@ const handleGenerate = () => {
     driverName: form.driverName,
     tollCharge: parseFloat(form.tollCost || "0"),
     extraCharge: parseFloat(form.extraCharges || "0"),
+
+    // ✅ send these for “Billing To”
+    customerMobile: form.mobileNumber,
+    customerAddress: form.address,
   });
 };
+
 
 
   return (
