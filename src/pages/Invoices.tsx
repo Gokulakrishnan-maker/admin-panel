@@ -28,21 +28,25 @@ export default function Invoices() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleGenerate = () => {
-    const invoiceNo = "INV" + Date.now();
-    const totalAmount =
-      parseFloat(form.totalKM || "0") * parseFloat(form.ratePerKM || "0") +
-      parseFloat(form.driverAllowance || "0") +
-      parseFloat(form.tollCost || "0") +
-      parseFloat(form.extraCharges || "0");
+const handleGenerate = () => {
+  const invoiceNo = "INV" + Date.now();
 
-    generateInvoice({
-      invoiceNo,
-      ...form,
-      totalAmount,
-      date: new Date().toLocaleDateString(),
-    });
-  };
+  generateInvoice({
+    invoiceNo,
+    customer: form.customerName,
+    pickup: form.origin,
+    drop: form.destination,
+    tripType: form.journeyType,
+    date: new Date().toLocaleDateString(),
+    distance: parseFloat(form.totalKM || "0"),
+    rate: parseFloat(form.ratePerKM || "0"),
+    vehicleType: form.vehicleType,
+    driverName: form.driverName,
+    tollCharge: parseFloat(form.tollCost || "0"),
+    extraCharge: parseFloat(form.extraCharges || "0"),
+  });
+};
+
 
   return (
     <div className="p-4 max-w-2xl mx-auto">
