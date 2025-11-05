@@ -26,8 +26,8 @@ export default function generateInvoice({
   date,
   distance,
   rate,
-  vehicleType = "Sedan",
-  driverName = "Satheesh",
+  vehicleType,
+  driverName,
   tollCharge = 0,
   extraCharge = 0,
 }: InvoiceData) {
