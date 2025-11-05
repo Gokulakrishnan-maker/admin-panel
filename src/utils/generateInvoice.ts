@@ -9,12 +9,12 @@ interface InvoiceData {
   drop: string;
   tripType: string;
   date: string;
-  distance: number;
-  rate: number;
+  distance: number | string;
+  rate: number | string;
   vehicleType?: string;
   driverName?: string;
-  tollCharge?: number;
-  extraCharge?: number;
+  tollCharge?: number | string;
+  extraCharge?: number | string;
 }
 
 export default function generateInvoice({
@@ -26,70 +26,87 @@ export default function generateInvoice({
   date,
   distance,
   rate,
-  vehicleType,
-  driverName,
+  vehicleType = "-",
+  driverName = "-",
   tollCharge = 0,
   extraCharge = 0,
 }: InvoiceData) {
-  // ✅ Ensure values are safe
-  const km = parseFloat(String(distance)) || 0;
-  const perKmRate = parseFloat(String(rate)) || 0;
-  const toll = parseFloat(String(tollCharge)) || 0;
-  const extra = parseFloat(String(extraCharge)) || 0;
+  // ✅ Safe parsing and numeric fallbacks
+  const km = Number(distance) || 0;
+  const perKmRate = Number(rate) || 0;
+  const toll = Number(tollCharge) || 0;
+  const extra = Number(extraCharge) || 0;
 
+  // ✅ Taxi billing rules
   const minKm = tripType === "One Way" ? 130 : 250;
   const chargeableKm = Math.max(km, minKm);
   const driverBata = 400;
   const baseFare = chargeableKm * perKmRate;
   const total = baseFare + driverBata + toll + extra;
 
+  // ✅ Create PDF safely
   const doc = new jsPDF({ unit: "mm", format: "a4" });
-
-  // ✅ Use standard font to avoid encoding issues
   doc.setFont("helvetica", "normal");
 
-  // --- HEADER ---
-  doc.addImage(logo, "PNG", 10, 8, 35, 25);
+  // ---------- HEADER ----------
+  try {
+    doc.addImage(logo, "PNG", 10, 8, 35, 25);
+  } catch {
+    // Skip logo if not found
+  }
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
   doc.text("FASTRIDE DROP TAXI", 55, 20);
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
-  doc.text(`INVOICE`, 190, 15, { align: "right" });
+  doc.text("INVOICE", 190, 15, { align: "right" });
   doc.text(`Invoice #: ${invoiceNo}`, 190, 22, { align: "right" });
   doc.text(`Date: ${date}`, 190, 28, { align: "right" });
 
   doc.line(10, 35, 200, 35);
 
-  // --- ADDRESS ---
+  // ---------- ADDRESS ----------
   doc.setFont("helvetica", "bold");
   doc.text("Billing From", 10, 42);
   doc.text("Billing To", 110, 42);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
 
-  doc.text("FASTRIDE DROP TAXI", 10, 48);
-  doc.text("3/8 VOC Nagar, Devamangalam", 10, 53);
-  doc.text("Ariyalur - 612902", 10, 58);
-  doc.text("Phone: 6382980204", 10, 63);
-  doc.text("www.fastridedroptaxi.com", 10, 68);
+  const companyAddress = [
+    "FASTRIDE DROP TAXI",
+    "3/8 VOC Nagar, Devamangalam",
+    "Ariyalur - 612902",
+    "Phone: 6382980204",
+    "www.fastridedroptaxi.com",
+  ];
 
-  doc.text(customer || "Customer Name", 110, 48);
-  doc.text(`${pickup || ""} ➝ ${drop || ""}`, 110, 53);
+  let y = 48;
+  companyAddress.forEach(line => {
+    doc.text(line, 10, y);
+    y += 5;
+  });
 
-  // --- TRIP DETAILS ---
+  const customerAddress = [customer || "Customer Name", `${pickup || ""} ➝ ${drop || ""}`];
+  let cy = 48;
+  customerAddress.forEach(line => {
+    doc.text(line, 110, cy);
+    cy += 5;
+  });
+
+  // ---------- TRIP DETAILS ----------
   autoTable(doc, {
     startY: 78,
     head: [["Trip Details", "Information"]],
     body: [
       ["Trip Type", tripType],
-      ["Pickup Location", pickup],
-      ["Drop Location", drop],
-      ["Distance (km)", `${km} km`],
+      ["Pickup Location", pickup || "-"],
+      ["Drop Location", drop || "-"],
+      ["Distance (km)", `${km.toFixed(1)} km`],
       ["Rate per km", `₹${perKmRate.toFixed(2)}`],
-      ["Vehicle Type", vehicleType || "-"],
-      ["Driver Name", driverName || "-"],
+      ["Vehicle Type", vehicleType],
+      ["Driver Name", driverName],
     ],
     theme: "grid",
     headStyles: { fillColor: [245, 245, 245], textColor: 0 },
@@ -100,7 +117,7 @@ export default function generateInvoice({
     },
   });
 
-  // --- BILLING DETAILS ---
+  // ---------- BILLING DETAILS ----------
   const startY = (doc as any).lastAutoTable.finalY + 10;
   autoTable(doc, {
     startY,
@@ -122,12 +139,13 @@ export default function generateInvoice({
     },
   });
 
-  // --- FOOTER ---
+  // ---------- FOOTER ----------
   const finalY = (doc as any).lastAutoTable.finalY + 15;
   doc.setFontSize(9);
   doc.text("This is a computer-generated invoice and does not require a signature.", 10, finalY);
   doc.text("Thank you for choosing Fastride Drop Taxi!", 10, finalY + 7);
   doc.text("For queries: fastridedroptaxi.booking@gmail.com", 10, finalY + 12);
 
+  // ✅ Download PDF
   doc.save(`invoice_${invoiceNo}.pdf`);
 }
