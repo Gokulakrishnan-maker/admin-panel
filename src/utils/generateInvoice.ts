@@ -3,104 +3,121 @@ import autoTable from "jspdf-autotable";
 import logo from "../assets/Fastridedroptaxi.png";
 
 interface InvoiceData {
+  invoiceNo: string;
   customer: string;
-  tripType: string;
   pickup: string;
   drop: string;
+  tripType: string;
+  date: string;
   distance: number;
   rate: number;
-  date: string;
-  invoiceNo: string;
+  vehicleType?: string;
+  driverName?: string;
+  tollCharge?: number;
+  extraCharge?: number;
 }
 
 export default function generateInvoice({
+  invoiceNo,
   customer,
-  tripType,
   pickup,
   drop,
+  tripType,
+  date,
   distance,
   rate,
-  date,
-  invoiceNo,
+  vehicleType = "Sedan",
+  driverName = "Satheesh",
+  tollCharge = 0,
+  extraCharge = 0,
 }: InvoiceData) {
-  const doc = new jsPDF("p", "mm", "a4");
+  const doc = new jsPDF();
 
-  // ✅ Minimum distance logic
-  const minDistance = tripType === "One Way" ? 130 : 250;
-  const finalDistance = distance < minDistance ? minDistance : distance;
-
-  // ✅ Charges
-  const subtotal = finalDistance * rate;
-  const driverBata = 400;
-  const total = subtotal + driverBata;
-
-  // ✅ Header
-  doc.addImage(logo, "PNG", 150, 10, 40, 30);
+  // ✅ Header with logo and title
+  doc.addImage(logo, "PNG", 10, 8, 40, 30);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.text("FASTRIDE DROP TAXI", 10, 20);
-  doc.setFont("helvetica", "normal");
+  doc.setFontSize(18);
+  doc.text("FASTRIDE DROP TAXI", 60, 20);
+
   doc.setFontSize(11);
-  doc.text("3/8, VOC Nagar, Devamangalam, Ariyalur - 612902", 10, 30);
-  doc.text("Phone: 6382980204 | Email: fastridedroptaxi.booking@gmail.com", 10, 38);
-  doc.line(10, 42, 200, 42);
-
-  // ✅ Title
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.text("TAXI SERVICE INVOICE", 70, 55);
-
-  // ✅ Customer Info
+  doc.text("INVOICE", 170, 20);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(12);
-  doc.text(`Customer Name: ${customer}`, 10, 70);
-  doc.text(`Date: ${date}`, 10, 78);
-  doc.text(`Invoice No: ${invoiceNo}`, 10, 86);
+  doc.text(`Invoice #: ${invoiceNo}`, 150, 28);
+  doc.text(`Date: ${date}`, 150, 34);
 
-  // ✅ Table (no ₹ symbol to avoid font issue)
-  const body = [
-    ["Trip Type", tripType],
-    ["Pickup Location", pickup],
-    ["Drop Location", drop],
-    ["Distance (km)", `${finalDistance.toFixed(0)} km`],
-    ["Rate per km", `Rs ${rate.toFixed(2)}`],
-    ["Driver Bata", `Rs ${driverBata.toFixed(2)}`],
-    ["Total Fare", `Rs ${total.toFixed(2)}`],
-  ];
+  doc.line(10, 40, 200, 40);
+
+  // ✅ Billing sections
+  doc.setFont("helvetica", "bold");
+  doc.text("Billing From", 10, 48);
+  doc.text("Billing To", 110, 48);
+
+  doc.setFont("helvetica", "normal");
+  doc.text("FASTRIDE DROP TAXI", 10, 54);
+  doc.text("3/8 VOC Nagar, Devamangalam", 10, 60);
+  doc.text("Ariyalur - 612902", 10, 66);
+  doc.text("Phone: 6382980204", 10, 72);
+
+  doc.text(`${customer}`, 110, 54);
+  doc.text(`${pickup} ➝ ${drop}`, 110, 60);
+
+  // ✅ Trip Details Table
+  autoTable(doc, {
+    startY: 82,
+    head: [["Trip Details", "Information"]],
+    body: [
+      ["Trip Type", tripType],
+      ["Pickup Location", pickup],
+      ["Drop Location", drop],
+      ["Distance (km)", `${distance.toFixed(0)} km`],
+      ["Rate per km", `₹${rate.toFixed(2)}`],
+      ["Vehicle Type", vehicleType],
+      ["Driver Name", driverName],
+    ],
+    theme: "grid",
+    headStyles: { fillColor: [240, 240, 240], textColor: 0 },
+    styles: { fontSize: 11, cellPadding: 4 },
+    columnStyles: {
+      0: { cellWidth: 90 },
+      1: { cellWidth: 90 },
+    },
+  });
+
+  // ✅ Billing Details Table
+  const startY = (doc as any).lastAutoTable.finalY + 10;
+  const minKm = tripType === "One Way" ? 130 : 250;
+  const chargeableKm = Math.max(distance, minKm);
+  const driverBata = 400;
+  const baseFare = chargeableKm * rate;
+  const total = baseFare + driverBata + tollCharge + extraCharge;
 
   autoTable(doc, {
-    startY: 100,
-    head: [["Description", "Details"]],
-    body,
+    startY,
+    head: [["Billing Details", "Amount (₹)"]],
+    body: [
+      [`Base Fare (${chargeableKm} km x ₹${rate})`, baseFare.toFixed(2)],
+      ["Driver Allowance", driverBata.toFixed(2)],
+      ["Toll Charges", tollCharge.toFixed(2)],
+      ["Extra Charges", extraCharge.toFixed(2)],
+      ["", ""],
+      ["Total Fare", total.toFixed(2)],
+    ],
     theme: "grid",
-    headStyles: { fillColor: [255, 204, 0], textColor: 0, halign: "center" },
-    styles: { fontSize: 11, cellPadding: 5 },
+    headStyles: { fillColor: [255, 204, 0], textColor: 0 },
+    styles: { fontSize: 11, cellPadding: 4 },
     columnStyles: {
-      0: { cellWidth: 100, halign: "left" },
+      0: { cellWidth: 100 },
       1: { cellWidth: 80, halign: "right" },
     },
   });
 
-  // ✅ Note for minimum distance
-  const minText =
-    finalDistance === minDistance
-      ? `(Minimum distance fare applied — ${minDistance} km)`
-      : "";
-
-  let finalY = (doc as any).lastAutoTable.finalY + 10;
-  if (minText) {
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(10);
-    doc.text(minText, 10, finalY);
-    finalY += 10;
-  }
-
   // ✅ Footer
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
+  const finalY = (doc as any).lastAutoTable.finalY + 20;
+  doc.setFontSize(10);
+  doc.text("This is a computer-generated invoice and does not require a signature.", 10, finalY);
   doc.text("Thank you for choosing Fastride Drop Taxi!", 10, finalY + 10);
-  doc.text("For queries, contact fastridedroptaxi.booking@gmail.com", 10, finalY + 18);
+  doc.text("For queries: fastridedroptaxi.booking@gmail.com", 10, finalY + 16);
 
-  // ✅ Save File
+  // ✅ Save the PDF
   doc.save(`invoice_${invoiceNo}.pdf`);
 }
