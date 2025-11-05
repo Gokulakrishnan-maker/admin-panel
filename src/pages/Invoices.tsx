@@ -15,23 +15,22 @@ export default function Invoices() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleGenerate = () => {
-    if (!form.customer || !form.pickup || !form.drop || !form.distance || !form.rate) {
-      alert("Please fill all fields!");
-      return;
-    }
+ const handleGenerate = () => {
+  const invoiceNo = "INV" + Date.now();
+  generateInvoice({
+    invoiceNo,
+    customer: form.customer,
+    pickup: form.pickup,
+    drop: form.drop,
+    tripType: form.tripType,
+    date: new Date().toLocaleDateString(),
+    distance: parseFloat(form.distance),
+    rate: parseFloat(form.rate),
+    tollCharge: 75, // optional
+    extraCharge: 0, // optional
+  });
+};
 
-    generateInvoice({
-      customer: form.customer,
-      tripType: form.tripType,
-      pickup: form.pickup,
-      drop: form.drop,
-      distance: parseFloat(form.distance),
-      rate: parseFloat(form.rate),
-      date: new Date().toLocaleDateString(),
-      invoiceNo: `INV-${Date.now()}`,
-    });
-  };
 
   return (
     <div className="p-6">
