@@ -1,4 +1,4 @@
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../utils/firebase";
 import { useEffect, useState } from "react";
@@ -32,6 +32,11 @@ export default function Layout() {
     navigate("/");
   };
 
+  const navClass = ({ isActive }: { isActive: boolean }) =>
+    isActive
+      ? "text-yellow-400 font-semibold"
+      : "hover:text-yellow-400 transition-colors";
+
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
@@ -42,33 +47,26 @@ export default function Layout() {
           </h2>
 
           <nav className="flex flex-col space-y-4">
-            <Link
-              to="/dashboard"
-              className="hover:text-yellow-400 transition-colors"
-            >
+            <NavLink to="/dashboard" className={navClass}>
               Dashboard
-            </Link>
+            </NavLink>
 
-            <Link
-              to="/invoices"
-              className="hover:text-yellow-400 transition-colors"
-            >
+            <NavLink to="/invoices" className={navClass}>
               Invoices
-            </Link>
+            </NavLink>
 
-            <Link
-              to="/rides"
-              className="hover:text-yellow-400 transition-colors"
-            >
+            <NavLink to="/rides" className={navClass}>
               Rides
-            </Link>
+            </NavLink>
 
-            <Link
-              to="/users"
-              className="hover:text-yellow-400 transition-colors"
-            >
+            {/* ⭐ NEW RATES MENU */}
+            <NavLink to="/rates" className={navClass}>
+              Rates
+            </NavLink>
+
+            <NavLink to="/users" className={navClass}>
               Users
-            </Link>
+            </NavLink>
           </nav>
         </div>
 
